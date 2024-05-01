@@ -1,0 +1,53 @@
+#version: "3"
+#services:
+
+#  postgres_db:
+#    image: postgres:14.7-alpine
+
+#  dataset_generator:
+#    build:
+#      context: ./dataset-generator
+#      dockerfile: Dockerfile
+
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:14.7-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: homework
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - db_network
+
+  dataset-generator:
+    build: ./dataset-generator
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DATABASE: homework
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      MAX_ROWS: 300
+      DATA_INSERTION_DELAY: 5
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - db_network
+
+networks:
+  db_network:
+
+volumes:
+  postgres_data: 
